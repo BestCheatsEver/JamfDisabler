@@ -279,7 +279,7 @@ Prebuilt binaries are produced by GitHub Actions
 | Platform | Asset |
 |---|---|
 | macOS Apple silicon | `JamfDisabler-macos-arm64` |
-| macOS Intel | `JamfDisabler-macos-x86_64` |
+| macOS Intel | `JamfDisabler-macos-x86_64` (built on `macos-15-intel`) |
 | Windows 10/11 x64 | `JamfDisabler-windows-x86_64.exe` |
 | Linux x86_64 | `JamfDisabler-linux-x86_64` |
 | Any OS with Python | `JamfDisabler.pyz` (portable single file) |

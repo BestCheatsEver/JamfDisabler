@@ -125,10 +125,10 @@ def test_status_reports_on_then_off(env, capsys):
 
 def test_status_detects_a_partially_removed_block(env, capsys):
     ops.enable(env["opts"])
-    text = env["hosts"].read_text()
-    text = text.replace("0.0.0.0  telemetry.jamfcloud.com\n", "")
-    text = text.replace("::       telemetry.jamfcloud.com\n", "")
-    env["hosts"].write_text(text)
+    raw = env["hosts"].read_bytes().replace(b"\r\n", b"\n")
+    raw = raw.replace(b"0.0.0.0  telemetry.jamfcloud.com\n", b"")
+    raw = raw.replace(b"::       telemetry.jamfcloud.com\n", b"")
+    env["hosts"].write_bytes(raw)
     env["opts"].json_out = True
     capsys.readouterr()
     ops.status(env["opts"])

@@ -75,11 +75,11 @@ def test_revert_keeps_foreign_lines_inside_the_block(tmp_path):
     hf = HostsFile(str(path))
     first = hf.apply(NAMES)
 
-    text = path.read_text().splitlines()
-    end = text.index(hosts_mod.END_MARKER)
-    text.insert(end, "198.51.100.7   keep-me.example.com")
-    text.insert(end, "# a comment the user added")
-    path.write_text("\n".join(text) + "\n")
+    raw = path.read_bytes().replace(b"\r\n", b"\n").split(b"\n")
+    end = raw.index(hosts_mod.END_MARKER.encode("utf-8"))
+    raw.insert(end, b"198.51.100.7   keep-me.example.com")
+    raw.insert(end, b"# a comment the user added")
+    path.write_bytes(b"\n".join(raw))
 
     back = hf.revert(expected_extra=NAMES, separator_text=first.separator_text)
     result = path.read_text()
@@ -98,8 +98,10 @@ def test_missing_end_marker_is_removed_without_leaving_junk(tmp_path):
     hf = HostsFile(str(path))
     result = hf.apply(NAMES)
 
-    # Simulate a block that lost its end marker (editor crash, disk full, ...)
-    path.write_text(path.read_text().split(hosts_mod.END_MARKER)[0])
+    # Simulate a block that lost its end marker (editor crash, disk full, ...).
+    # Byte-level surgery: text mode would rewrite line endings on Windows.
+    marker = hosts_mod.END_MARKER.encode("utf-8")
+    path.write_bytes(path.read_bytes().split(marker)[0])
 
     back = hf.revert(expected_extra=NAMES, separator_text=result.separator_text)
     assert back.truncated_block
@@ -108,6 +110,27 @@ def test_missing_end_marker_is_removed_without_leaving_junk(tmp_path):
     assert hosts_mod.END_MARKER not in text
     assert hosts_mod.BEGIN_MARKER not in text
     assert path.read_bytes() == original
+
+
+def test_revert_copes_with_line_endings_changed_by_another_tool(tmp_path):
+    """A tool that rewrites the file with different endings must not leave litter.
+
+    Regression test: on Windows pytest wrote through text mode, the file came
+    back with CRLF, and removing an LF separator left a stray CR behind.
+    """
+    path = tmp_path / "hosts"
+    path.write_bytes(b"127.0.0.1 localhost\n")
+    hf = HostsFile(str(path))
+    hf.apply(NAMES)
+
+    raw = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    path.write_bytes(raw)  # an editor "helpfully" converted the whole file
+
+    hf.revert(expected_extra=NAMES, separator_text="\n")
+    result = path.read_bytes()
+    assert b"\r\r" not in result
+    assert b"jamfcloud.com" not in result
+    assert result == b"127.0.0.1 localhost\r\n"
 
 
 def test_revert_without_block_is_a_noop(tmp_path):

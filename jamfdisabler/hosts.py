@@ -212,6 +212,19 @@ class HostsFile:
         return bool(host) and (host in expected or is_jamf_hostname(host))
 
     @staticmethod
+    def _separator_for(separator_text: str, eol: str) -> str:
+        """Express a recorded separator in the file's *current* line endings.
+
+        Something else may have rewritten the file with different endings while
+        the block was active (an editor on Windows, a distro tool, a sync
+        client).  Normalising means we still remove exactly the blank line(s) we
+        inserted instead of leaving a stray CR/LF behind.
+        """
+        if not separator_text:
+            return ""
+        return separator_text.replace("\r\n", "\n").replace("\n", eol)
+
+    @staticmethod
     def _is_our_comment(line: str) -> bool:
         stripped = line.strip()
         if not stripped.startswith("#"):
@@ -280,9 +293,9 @@ class HostsFile:
             else:
                 suffix.append(tail)
         separator_removed = False
-        if separator_text and prefix and "".join(prefix).endswith(separator_text):
-            joined = "".join(prefix)[: -len(separator_text)]
-            prefix = [joined]
+        wanted = self._separator_for(separator_text, eol)
+        if wanted and prefix and "".join(prefix).endswith(wanted):
+            prefix = ["".join(prefix)[: -len(wanted)]]
             separator_removed = True
 
         new_text = "".join(prefix) + "".join(preserved) + "".join(suffix)

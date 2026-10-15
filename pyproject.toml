@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jamfdisabler"
+version = "1.0.0"
+description = "Reversible, non-destructive blocker that stops Jamf software from talking to Jamf servers"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "BestCheatsEver" }]
+keywords = ["jamf", "privacy", "mdm", "hosts", "blocker", "reversible", "jamfcloud"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security",
+  "Topic :: System :: Networking :: Firewalls",
+]
+
+[project.scripts]
+jamfdisabler = "jamfdisabler.cli:entry"
+
+[project.urls]
+Homepage = "https://github.com/BestCheatsEver/JamfDisabler"
+Releases = "https://github.com/BestCheatsEver/JamfDisabler/releases"
+Issues = "https://github.com/BestCheatsEver/JamfDisabler/issues"
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.0"]
+dev = ["pytest>=7.0", "ruff>=0.4"]
+
+[tool.setuptools]
+packages = ["jamfdisabler"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+exclude = [".git", "dist", "build", "*.egg-info"]
+
+[tool.ruff.lint]
+# Deliberately no "UP": the code targets Python 3.8 and uses explicit
+# str.format() plus typing.List/Optional for a uniform, dependency-free style.
+select = ["E", "F", "W", "I", "B", "S", "C4", "RET", "SIM"]
+ignore = [
+  "S603",   # subprocess with a list argv is intentional (no shell)
+  "S607",   # partial executable paths for system tools are fine here
+  "SIM108", # ternaries are not always clearer
+  "SIM105", # explicit try/except/pass is the most readable form for best-effort cleanup
+  "S110",   # the same: cleanup, log writes and DNS flushes must never raise
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "E501"]

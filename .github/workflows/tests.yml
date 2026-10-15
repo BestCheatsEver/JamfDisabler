@@ -32,7 +32,24 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m pytest -q --tb=short -rf 2>&1 | tee pytest-output.txt
+          if python -m pytest -q --tb=short -rf > pytest-output.txt 2>&1; then
+            cat pytest-output.txt
+            exit 0
+          fi
+          cat pytest-output.txt
+          python - <<'PY'
+          import pathlib
+
+          text = pathlib.Path("pytest-output.txt").read_text(errors="replace")
+          lines = text.splitlines()
+          detail = "\n".join(lines[-120:])
+          for i in range(0, min(len(detail), 5000), 800):
+              chunk = detail[i : i + 800].replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+              print("::error title=pytest failure detail::" + chunk)
+          for line in [l for l in lines if l.startswith(("FAILED", "ERROR"))][:25]:
+              print("::error title=failed test::" + line.replace("%", "%25"))
+          raise SystemExit(1)
+          PY
 
       - name: upload failure log
         if: failure()

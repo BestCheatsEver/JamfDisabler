@@ -150,6 +150,7 @@ def test_latin1_file_survives_round_trip(tmp_path):
     assert path.read_bytes() == SAMPLES["latin1_comment"]
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows has no POSIX permission bits")
 def test_permissions_are_preserved(tmp_path):
     path = tmp_path / "hosts"
     path.write_bytes(b"127.0.0.1 localhost\n")
@@ -159,6 +160,7 @@ def test_permissions_are_preserved(tmp_path):
     assert (os.stat(path).st_mode & 0o777) == 0o644
 
 
+@pytest.mark.skipif(os.name == "nt", reason="creating symlinks needs extra Windows privileges")
 def test_symlinked_hosts_writes_through_to_the_target(tmp_path):
     target = tmp_path / "real-hosts"
     target.write_bytes(b"127.0.0.1 localhost\n")

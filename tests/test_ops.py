@@ -184,7 +184,14 @@ def test_include_optional_widens_the_list(env):
     assert "downloads.jamfcloud.com" in plan.catalogue
 
 
-@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
+def _is_root() -> bool:
+    """POSIX-only helper: os.geteuid does not exist on Windows."""
+    geteuid = getattr(os, "geteuid", None)
+    return bool(geteuid) and geteuid() == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="needs POSIX directory permissions")
+@pytest.mark.skipif(_is_root(), reason="root ignores directory permissions")
 def test_unwritable_hosts_directory_reports_a_clear_error(env, capsys, tmp_path):
     locked = tmp_path / "locked"
     locked.mkdir()

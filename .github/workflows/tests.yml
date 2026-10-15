@@ -54,7 +54,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: run the CLI (no changes: dry-run/read-only commands only)
+      - name: run the CLI (dry-run and read-only commands only)
         shell: bash
         run: |
           set -euo pipefail

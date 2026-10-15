@@ -74,6 +74,19 @@ def test_docs_mention_the_undo_command():
     assert "does **not** do" in readme or "does *not* do" in readme
 
 
+def test_workflow_yaml_is_valid():
+    """A stray colon in a step name silently breaks the whole workflow."""
+    yaml = pytest.importorskip("yaml")
+    for name in ("tests.yml", "build.yml"):
+        path = os.path.join(REPO_ROOT, ".github", "workflows", name)
+        with open(path, "r", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh)
+        assert isinstance(data, dict) and data.get("jobs"), "{} has no jobs".format(name)
+        for spec in data["jobs"].values():
+            for step in spec.get("steps", []):
+                assert "name" in step or "uses" in step or "run" in step
+
+
 @pytest.mark.skipif(os.name == "nt", reason="POSIX executable bits")
 def test_shell_scripts_are_executable():
     for name in ("install.sh",):
